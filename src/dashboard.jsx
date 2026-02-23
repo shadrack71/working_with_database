@@ -84,7 +84,7 @@ export default function Dashboard() {
               {sales.map(sale => (
                 <tr key={sale.id}>
                   <td>{sale.id}</td>
-                  <td>${sale.amount.toFixed(2)}</td>
+                  <td>${sale.value.toFixed(2)}</td>
                   <td>{new Date(sale.created_at).toLocaleDateString()}</td>
                   <td><span className={`status ${sale.status?.toLowerCase()}`}>{sale.status || 'Completed'}</span></td>
                 </tr>

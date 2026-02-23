@@ -1,10 +1,10 @@
-import Dashboard from './dashboard'
+import TaskManager from './components/TaskManager'
 import './App.css'
 
 function App() {
   return (
     <div className="app">
-      <Dashboard />
+      <TaskManager />
     </div>
   )
 }
