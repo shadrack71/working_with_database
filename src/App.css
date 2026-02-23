@@ -5,6 +5,19 @@
   text-align: center;
 }
 
+.app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.app.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #666;
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;

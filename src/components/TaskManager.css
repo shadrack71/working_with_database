@@ -7,14 +7,49 @@
 }
 
 .task-header {
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 30px;
+  gap: 20px;
 }
 
 .task-header h1 {
   color: #333;
   margin: 0;
   font-size: 32px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-email {
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.signout-btn {
+  padding: 8px 16px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.signout-btn:hover {
+  background: #dc2626;
+}
+
+.signout-btn:active {
+  transform: scale(0.98);
 }
 
 .task-input-container {

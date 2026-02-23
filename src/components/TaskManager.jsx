@@ -3,10 +3,11 @@ import { useEffect, useState } from 'react'
 import supabase from '../supabase-client.js'
 import './TaskManager.css'
 
-export default function TaskManager() {
+export default function TaskManager({ user, onSignOut }) {
   const [tasks, setTasks] = useState([])
   const [input, setInput] = useState('')
   const [description, setDescription] = useState('')
+  const [newDescription, setNewDescription] = useState("");
   const [filter, setFilter] = useState('all') // all, active, completed
   const [loading, setLoading] = useState(true)
 
@@ -33,6 +34,46 @@ const fetchTasks = async ()=>{
 
 
 }
+
+
+const deleteTask = async (id)=>{
+    try {
+        setLoading(true)
+        const {error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id',id)
+        
+        if (error) throw error
+        setTasks(tasks.filter(t => t.id !== id))
+        
+    } catch (error) {
+        console.error('Error deleting task:', error.message)
+        
+    }
+
+
+}
+const updateTask = async (id)=>{
+    try {
+        setLoading(true)
+        const {error } = await supabase
+        .from('tasks')
+        .update({ description: newDescription })
+        .eq('id',id)
+        
+        if (error) throw error
+        setTasks(tasks.map(t =>
+        t.id === id ? { ...t, description: newDescription } : t
+      ))
+        
+    } catch (error) {
+        console.error('Error updating task:', error.message)
+        
+    }
+
+
+}
 const addTask =  async (e) => {
     e.preventDefault()
 
@@ -46,8 +87,6 @@ const addTask =  async (e) => {
       completed: false,
     }
 
-
-
     const { error } = await supabase.from('tasks').insert(newTask).single()
 
     if(error){
@@ -56,20 +95,30 @@ const addTask =  async (e) => {
     setTasks([newTask, ...tasks])
     setInput('')
     setDescription('')
-    
 
 
   }
 
-  const toggleTask = (id) => {
-    setTasks(tasks.map(task =>
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ))
-  }
+ // Toggle task completion status
+   const toggleTask = async (id) => {
+     try {
+       const task = tasks.find(t => t.id === id)
+       const { error } = await supabase
+         .from('tasks')
+         .update({ completed: !task.completed })
+         .eq('id', id)
+ 
+       if (error) throw error
+ 
+       setTasks(tasks.map(t =>
+         t.id === id ? { ...t, completed: !t.completed } : t
+       ))
+     } catch (error) {
+       console.error('Error updating task:', error.message)
+     }
+   }
 
-  const deleteTask = (id) => {
-    setTasks(tasks.filter(task => task.id !== id))
-  }
+
 
   const handleKeyPress = async (e) => {
     if (e.key === 'Enter') {
@@ -88,12 +137,26 @@ const addTask =  async (e) => {
 
 //   if (loading) {
 //     return <div className="task-manager"><p>Loading tasks...</p></div>
-//   }
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      onSignOut()
+    } catch (error) {
+      console.error('Error signing out:', error.message)
+    }
+  }
 
   return (
     <div className="task-manager">
       <header className="task-header">
         <h1>📋 Task Manager</h1>
+        <div className="header-right">
+          <span className="user-email">{user?.email}</span>
+          <button onClick={handleSignOut} className="signout-btn">
+            Sign Out
+          </button>
+        </div>
       </header>
 
       <div className="task-input-container">
@@ -176,6 +239,17 @@ const addTask =  async (e) => {
                   <div className="task-info">
                     <span className="task-title">{task.title}</span>
                     <p className="task-description">{task.description}</p>
+                    <input
+                    type="text"
+                  placeholder="Updated description..."
+                  onChange={(e) => setNewDescription(e.target.value)}
+                />
+                <button
+                  style={{ padding: "0.5rem 1rem", marginRight: "0.5rem" }}
+                  onClick={() => updateTask(task.id)}
+                >
+                  Edit
+                </button>
                   </div>
                 </div>
                 <button

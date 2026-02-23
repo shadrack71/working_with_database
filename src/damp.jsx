@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import supabase from '../supabase-client.js'
 import './TaskManager.css'
 
-export default function TaskManager() {
+export  function TaskManager() {
   const [tasks, setTasks] = useState([])
   const [input, setInput] = useState('')
   const [description, setDescription] = useState('')
@@ -221,4 +221,56 @@ export default function TaskManager() {
       </div>
     </div>
   )
+}
+
+
+// sign up 
+
+export default function  signUP(){
+
+    const handleSubmitLoging = async ()=>{
+        let email = "shadr"
+        let password = "12345"
+
+        const {error:errorSignup } =  await supabase.auth.signUP({email , password})
+        if(errorSignup) throw errorSignup
+
+    }
+
+    handleSubmitLoging()
+
+    const handleSubmit = async ()=>{
+        const { data, error:errorSignIn } = await supabase.auth.signInWithPassword({
+            email: 'example@email.com',
+            password: 'example-password',
+            })
+             if(errorSignIn) throw errorSignIn
+
+    }
+    handleSubmit()
+
+
+    const fetchSession = async ()=>{
+        const session = await supabase.auth.getSession()
+
+        console.log(session.data)
+    }
+
+    fetchSession()
+
+
+const listenLogin = async ()=>{
+        const session = await supabase.auth.getSession()
+
+        console.log(session.data)
+    }
+
+
+
+
+    
+
+
+
+
 }
