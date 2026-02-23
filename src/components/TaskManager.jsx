@@ -246,25 +246,40 @@ const addTask =  async (e) => {
       </header>
 
       <div className="task-input-container">
-        <input
-          type="text"
-          placeholder="Add a new task..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
-          className="task-input"
-        />
+        <div className="input-group">
+          <input
+            type="text"
+            placeholder="Add a new task..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            className="task-input"
+          />
 
-        <input
-          type="text"
-          placeholder="Add a new task description..."
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          onKeyPress={handleKeyPress}
-          className="task-input"
-        />
-        <input type="file" accept="image/*" onChange={handleFileChange} />
-        <button onClick={addTask} className="add-btn">Add Task</button>
+          <input
+            type="text"
+            placeholder="Add a description..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            onKeyPress={handleKeyPress}
+            className="task-input"
+          />
+        </div>
+
+        <div className="input-actions">
+          <label className="file-input-label">
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={handleFileChange}
+              className="file-input"
+            />
+            <span className="file-input-text">
+              {taskImage ? `✓ ${taskImage.name}` : '📷 Upload Image'}
+            </span>
+          </label>
+          <button onClick={addTask} className="add-btn">Add Task</button>
+        </div>
       </div>
 
       <div className="task-stats">
@@ -317,6 +332,11 @@ const addTask =  async (e) => {
             {filteredTasks.map(task => (
               <li key={task.id} className={`task-item ${task.completed ? 'completed' : ''}`}>
                 <div className="task-content">
+                  {task.image_url && (
+                    <div className="task-image-wrapper">
+                      <img src={task.image_url} alt={task.title} className="task-image" />
+                    </div>
+                  )}
                   <input
                     type="checkbox"
                     checked={task.completed}
@@ -326,17 +346,21 @@ const addTask =  async (e) => {
                   <div className="task-info">
                     <span className="task-title">{task.title}</span>
                     <p className="task-description">{task.description}</p>
-                    <input
-                    type="text"
-                  placeholder="Updated description..."
-                  onChange={(e) => setNewDescription(e.target.value)}
-                />
-                <button
-                  style={{ padding: "0.5rem 1rem", marginRight: "0.5rem" }}
-                  onClick={() => updateTask(task.id)}
-                >
-                  Edit
-                </button>
+                    <div className="task-edit-section">
+                      <input
+                        type="text"
+                        placeholder="Update description..."
+                        value={newDescription}
+                        onChange={(e) => setNewDescription(e.target.value)}
+                        className="task-edit-input"
+                      />
+                      <button
+                        className="task-edit-btn"
+                        onClick={() => updateTask(task.id)}
+                      >
+                        Update
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <button
