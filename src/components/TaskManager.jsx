@@ -10,6 +10,7 @@ export default function TaskManager({ user, onSignOut }) {
   const [newDescription, setNewDescription] = useState("");
   const [filter, setFilter] = useState('all') // all, active, completed
   const [loading, setLoading] = useState(true)
+  const [taskImage, setTaskImage] = useState(null);
 
 useEffect(()=>{
     fetchTasks()
@@ -114,8 +115,38 @@ const updateTask = async (id)=>{
 
 
 }
+
+const uploadImage = async (taskImage)=>{
+    const filePath = `${taskImage.name}-${Date.now()}`;
+
+    const { error } = await supabase.storage
+    .from('task_image')
+    .upload(filePath, taskImage, {
+        cacheControl: '3600',
+        upsert: false
+    })
+
+
+    if (error) {
+      console.error("Error uploading image:", error.message);
+      return null;
+    }
+
+    const { data } = await supabase.storage
+      .from("task_image")
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+
+}
 const addTask =  async (e) => {
     e.preventDefault()
+
+    let imageUrl = null
+
+    if(taskImage){
+        imageUrl = await uploadImage(taskImage)
+    }
     
 
     if (input.trim() === '') return
@@ -126,6 +157,7 @@ const addTask =  async (e) => {
       title: input,
       description:description,
       user_id: user.id,
+      image_url:imageUrl,
       completed: false,
     }
 
@@ -192,6 +224,13 @@ const addTask =  async (e) => {
   }
 
 
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setTaskImage(e.target.files[0]);
+    }
+  };
+
+
   
 
   return (
@@ -224,6 +263,7 @@ const addTask =  async (e) => {
           onKeyPress={handleKeyPress}
           className="task-input"
         />
+        <input type="file" accept="image/*" onChange={handleFileChange} />
         <button onClick={addTask} className="add-btn">Add Task</button>
       </div>
 
