@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-
 import supabase from '../supabase-client.js'
 import './TaskManager.css'
 
@@ -7,16 +6,17 @@ export default function TaskManager({ user, onSignOut }) {
   const [tasks, setTasks] = useState([])
   const [input, setInput] = useState('')
   const [description, setDescription] = useState('')
-  const [newDescription, setNewDescription] = useState("");
-  const [filter, setFilter] = useState('all') // all, active, completed
+  const [editingId, setEditingId] = useState(null)
+  const [newDescription, setNewDescription] = useState('')
+  const [filter, setFilter] = useState('all')
   const [loading, setLoading] = useState(true)
 
-useEffect(()=>{
+  // Fetch tasks on mount
+  useEffect(() => {
     fetchTasks()
-},[])
+  }, [])
 
-
-// Real-time subscription
+  // Real-time subscription
   useEffect(() => {
     const channel = supabase
       .channel('tasks_change')
@@ -37,150 +37,127 @@ useEffect(()=>{
         }
       )
       .subscribe()
-      setLoading(false)
 
     return () => {
       channel.unsubscribe()
     }
-    
   }, [])
 
-
-const fetchTasks = async ()=>{
+  const fetchTasks = async () => {
     try {
-        setLoading(true)
-        const {data , error } = await supabase
+      setLoading(true)
+      const { data, error } = await supabase
         .from('tasks')
         .select('*')
         .order('created_at', { ascending: false })
-        
-        if (error) throw error
-        setTasks(data || [])
-        
+
+      if (error) throw error
+      setTasks(data || [])
     } catch (error) {
-        console.error('Error fetching tasks:', error.message)
-        
+      console.error('Error fetching tasks:', error.message)
     } finally {
-    setLoading(false)
+      setLoading(false)
+    }
   }
 
-
-}
-
-
-const deleteTask = async (id)=>{
-    try {
-        setLoading(true)
-        const {error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id',id)
-        
-        if (error) throw error
-        setTasks(tasks.filter(t => t.id !== id))
-        
-    } catch (error) {
-        console.error('Error deleting task:', error.message)
-        
-    } finally {
-    setLoading(false)
-  }
-
-
-}
-const updateTask = async (id)=>{
-    try {
-        if (!newDescription.trim()) {
-            alert('Please enter a description')
-             return
-        }
-        setLoading(true)
-        const {error } = await supabase
-        .from('tasks')
-        .update({ description: newDescription })
-        .eq('id',id)
-        
-        if (error) throw error
-        setTasks(tasks.map(t =>
-        t.id === id ? { ...t, description: newDescription } : t
-      ))
-        
-    } catch (error) {
-        console.error('Error updating task:', error.message)
-        
-    } finally {
-    setLoading(false)
-  }
-
-
-}
-const addTask =  async (e) => {
+  const addTask = async (e) => {
     e.preventDefault()
-    
 
-    if (input.trim() === '') return
-    if (description.trim() === '') return
-
+    if (!input.trim() || !description.trim()) {
+      alert('Please fill in both title and description')
+      return
+    }
 
     const newTask = {
       title: input,
-      description:description,
+      description: description,
       user_id: user.id,
       completed: false,
     }
 
-    const { error } = await supabase.from('tasks').insert({...newTask,email:user.email}).single()
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([newTask])
+        .select()
 
-    if(error){
-        console.error('Error adding tasks:', error.message)
+      if (error) throw error
+      setTasks([data[0], ...tasks])
+      setInput('')
+      setDescription('')
+    } catch (error) {
+      console.error('Error adding task:', error.message)
     }
-    setTasks([newTask, ...tasks])
-    setInput('')
-    setDescription('')
-
-
   }
 
- // Toggle task completion status
-   const toggleTask = async (id) => {
-     try {
-       const task = tasks.find(t => t.id === id)
-       const { error } = await supabase
-         .from('tasks')
-         .update({ completed: !task.completed })
-         .eq('id', id)
- 
-       if (error) throw error
- 
-       setTasks(tasks.map(t =>
-         t.id === id ? { ...t, completed: !t.completed } : t
-       ))
-     } catch (error) {
-       console.error('Error updating task:', error.message)
-     } finally {
-    setLoading(false)
+  const updateTask = async (id) => {
+    if (!newDescription.trim()) {
+      alert('Please enter a description')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const { error } = await supabase
+        .from('tasks')
+        .update({ description: newDescription })
+        .eq('id', id)
+
+      if (error) throw error
+
+      setTasks(tasks.map((t) =>
+        t.id === id ? { ...t, description: newDescription } : t
+      ))
+      setEditingId(null)
+      setNewDescription('')
+    } catch (error) {
+      console.error('Error updating task:', error.message)
+    } finally {
+      setLoading(false)
+    }
   }
-   }
 
+  const deleteTask = async (id) => {
+    try {
+      setLoading(true)
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', id)
 
+      if (error) throw error
+      setTasks(tasks.filter((t) => t.id !== id))
+    } catch (error) {
+      console.error('Error deleting task:', error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const handleKeyPress = async (e) => {
+  const toggleTask = async (id) => {
+    try {
+      const task = tasks.find((t) => t.id === id)
+      const { error } = await supabase
+        .from('tasks')
+        .update({ completed: !task.completed })
+        .eq('id', id)
+
+      if (error) throw error
+
+      setTasks(tasks.map((t) =>
+        t.id === id ? { ...t, completed: !t.completed } : t
+      ))
+    } catch (error) {
+      console.error('Error updating task:', error.message)
+    }
+  }
+
+  const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-     await addTask(e)
+      addTask(e)
     }
   }
 
-  const filteredTasks = tasks.filter(task => {
-    if (filter === 'active') return !task.completed
-    if (filter === 'completed') return task.completed
-    return true
-  })
-
-  const completedCount = tasks.filter(task => task.completed).length
-  const activeCount = tasks.length - completedCount
-
-//   if (loading) {
-//     return <div className="task-manager"><p>Loading tasks...</p></div>
   const handleSignOut = async () => {
     try {
       const { error } = await supabase.auth.signOut()
@@ -191,8 +168,18 @@ const addTask =  async (e) => {
     }
   }
 
+  const filteredTasks = tasks.filter((task) => {
+    if (filter === 'active') return !task.completed
+    if (filter === 'completed') return task.completed
+    return true
+  })
 
-  
+  const completedCount = tasks.filter((task) => task.completed).length
+  const activeCount = tasks.length - completedCount
+
+  if (loading && tasks.length === 0) {
+    return <div className="task-manager"><p>Loading tasks...</p></div>
+  }
 
   return (
     <div className="task-manager">
@@ -215,10 +202,9 @@ const addTask =  async (e) => {
           onKeyPress={handleKeyPress}
           className="task-input"
         />
-
         <input
           type="text"
-          placeholder="Add a new task description..."
+          placeholder="Add task description..."
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           onKeyPress={handleKeyPress}
@@ -274,7 +260,7 @@ const addTask =  async (e) => {
           </div>
         ) : (
           <ul className="tasks-list">
-            {filteredTasks.map(task => (
+            {filteredTasks.map((task) => (
               <li key={task.id} className={`task-item ${task.completed ? 'completed' : ''}`}>
                 <div className="task-content">
                   <input
@@ -286,17 +272,40 @@ const addTask =  async (e) => {
                   <div className="task-info">
                     <span className="task-title">{task.title}</span>
                     <p className="task-description">{task.description}</p>
-                    <input
-                    type="text"
-                  placeholder="Updated description..."
-                  onChange={(e) => setNewDescription(e.target.value)}
-                />
-                <button
-                  style={{ padding: "0.5rem 1rem", marginRight: "0.5rem" }}
-                  onClick={() => updateTask(task.id)}
-                >
-                  Edit
-                </button>
+                    
+                    {editingId === task.id ? (
+                      <div className="edit-container">
+                        <input
+                          type="text"
+                          placeholder="Update description..."
+                          value={newDescription}
+                          onChange={(e) => setNewDescription(e.target.value)}
+                          className="edit-input"
+                        />
+                        <button
+                          onClick={() => updateTask(task.id)}
+                          className="edit-btn"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="cancel-btn"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setEditingId(task.id)
+                          setNewDescription(task.description)
+                        }}
+                        className="edit-btn"
+                      >
+                        Edit
+                      </button>
+                    )}
                   </div>
                 </div>
                 <button

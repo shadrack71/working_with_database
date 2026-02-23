@@ -40,6 +40,7 @@ export default function SignUp({ onSwitchToSignIn }) {
       })
 
       const { error:error_insert } = await supabase.from('users').insert({
+        name,
         email,
         password
       }).single()
